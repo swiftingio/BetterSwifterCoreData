@@ -13,7 +13,7 @@ protocol NewCoreDataWorkerProtocol {
         (with predicate: NSPredicate?,
          sortDescriptors: [NSSortDescriptor]?,
          fetchLimit: Int?,
-         completion: @escaping (Result<[Entity]>) -> Void)
+         completion: @escaping (Result<[Entity], Error>) -> Void)
     func upsert<Entity: ManagedObjectConvertible>
         (entities: [Entity],
          completion: @escaping (Error?) -> Void)
@@ -25,7 +25,7 @@ extension NewCoreDataWorkerProtocol {
         (with predicate: NSPredicate? = nil,
          sortDescriptors: [NSSortDescriptor]? = nil,
          fetchLimit: Int? = nil,
-         completion: @escaping (Result<[Entity]>) -> Void) {
+         completion: @escaping (Result<[Entity], Error>) -> Void) {
         get(with: predicate,
             sortDescriptors: sortDescriptors,
             fetchLimit: fetchLimit,
@@ -45,7 +45,7 @@ class NewCoreDataWorker: NewCoreDataWorkerProtocol {
         (with predicate: NSPredicate?,
          sortDescriptors: [NSSortDescriptor]?,
          fetchLimit: Int?,
-         completion: @escaping (Result<[Entity]>) -> Void) {
+         completion: @escaping (Result<[Entity], Error>) -> Void) {
         coreData.performForegroundTask { context in
             do {
                 let fetchRequest = Entity.ManagedObject.fetchRequest()
@@ -55,7 +55,7 @@ class NewCoreDataWorker: NewCoreDataWorkerProtocol {
                     fetchRequest.fetchLimit = fetchLimit
                 }
                 let results = try context.fetch(fetchRequest) as? [Entity.ManagedObject]
-                let items: [Entity] = results?.flatMap { $0.toEntity() as? Entity } ?? []
+                let items: [Entity] = results?.compactMap { $0.toEntity() as? Entity } ?? []
                 completion(.success(items))
             } catch {
                 let fetchError = CoreDataWorkerError.cannotFetch("Cannot fetch error: \(error))")
@@ -69,7 +69,7 @@ class NewCoreDataWorker: NewCoreDataWorkerProtocol {
          completion: @escaping (Error?) -> Void) {
         
         coreData.performBackgroundTask { context in
-            _ = entities.flatMap({ (entity) -> Entity.ManagedObject? in
+            _ = entities.compactMap({ (entity) -> Entity.ManagedObject? in
                 return entity.toManagedObject(in: context)
             })
             do {
