@@ -13,7 +13,7 @@ protocol CoreDataWorkerProtocol {
     func get(with predicate: NSPredicate?,
              sortDescriptors: [NSSortDescriptor]?,
              fetchLimit: Int?,
-             completion: @escaping (Result<[EntityType]>) -> Void)
+             completion: @escaping (Result<[EntityType], Error>) -> Void)
     func upsert(entities: [EntityType],
                 completion: @escaping (Error?) -> Void)
 }
@@ -22,7 +22,7 @@ extension CoreDataWorkerProtocol {
     func get(with predicate: NSPredicate? = nil,
              sortDescriptors: [NSSortDescriptor]? = nil,
              fetchLimit: Int? = nil,
-             completion: @escaping (Result<[EntityType]>) -> Void){
+             completion: @escaping (Result<[EntityType], Error>) -> Void){
         get(with: predicate,
             sortDescriptors: sortDescriptors,
             fetchLimit: fetchLimit,
@@ -46,7 +46,7 @@ Entity: ManagedObjectConvertible {
     }
     
     func get(with predicate: NSPredicate?, sortDescriptors: [NSSortDescriptor]?, fetchLimit: Int?,
-             completion: @escaping (Result<[Entity]>) -> Void) {
+             completion: @escaping (Result<[Entity], Error>) -> Void) {
         
         coreData.performForegroundTask { (context) in
             do {
@@ -57,7 +57,7 @@ Entity: ManagedObjectConvertible {
                     fetchRequest.fetchLimit = fetchLimit
                 }
                 let results = try context.fetch(fetchRequest) as? [ManagedEntity]
-                let items: [Entity] = results?.flatMap { $0.toEntity() as? Entity } ?? []
+                let items: [Entity] = results?.compactMap { $0.toEntity() as? Entity } ?? []
                 completion(.success(items))
             } catch {
                 let fetchError = CoreDataWorkerError.cannotFetch("Cannot fetch error: \(error))")
@@ -68,7 +68,7 @@ Entity: ManagedObjectConvertible {
     
     func upsert(entities: [Entity], completion: @escaping (Error?) -> Void) {
         coreData.performBackgroundTask { (context) in
-            _ = entities.flatMap({ (entity) -> ManagedEntity? in
+            _ = entities.compactMap({ (entity) -> ManagedEntity? in
                 return entity.toManagedObject(in: context) as? ManagedEntity
             })
             do {

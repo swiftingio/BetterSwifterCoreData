@@ -15,9 +15,9 @@ class ViewController: UIViewController {
     
     let nameTextField: UITextField = UITextField()
     let usernameTextField: UITextField = UITextField()
-    let loadButton: UIButton = UIButton(type: UIButtonType.system)
-    let updateButton: UIButton = UIButton(type: UIButtonType.system)
-    let clearButton: UIButton = UIButton(type: UIButtonType.system)
+    let loadButton: UIButton = UIButton(type: UIButton.ButtonType.system)
+    let updateButton: UIButton = UIButton(type: UIButton.ButtonType.system)
+    let clearButton: UIButton = UIButton(type: UIButton.ButtonType.system)
     
     override func viewDidLoad() {
         super.viewDidLoad()

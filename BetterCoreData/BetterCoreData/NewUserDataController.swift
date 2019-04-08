@@ -17,7 +17,7 @@ class NewUserDataController: UserDataControllerProtocol {
     }
     
     func fetchUser(completion: @escaping (User?) -> Void) {
-        worker.get{ [weak self](result: Result<[User]>) in
+        worker.get{ [weak self](result: Result<[User], Error>) in
             switch result {
             case .success(let users):
                 self?.currentUser = users.first
